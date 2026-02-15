@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When is Ramadan? - Moon Visibility Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="moon-icon">🌙</div>
+        <h1>When is Ramadan?</h1>
+        <p class="subtitle">Find out when the new moon will be visible in your location</p>
+
+        <div class="info-box">
+            ✨ Simply enter your city and the month you want to check. We'll calculate everything automatically!
+        </div>
+
+        <div id="simpleMode" class="simple-mode">
+            <div class="input-group">
+                <label for="city">📍 Your City</label>
+                <input type="text" id="city" placeholder="e.g., Marrakesh, Rabat, Casablanca..." autocomplete="off">
+                <div class="input-hint">Type your city name</div>
+                <div id="citySuggestions" class="city-suggestions"></div>
+                <div class="location-detect">
+                    <button class="detect-btn" onclick="detectLocation()">📍 Use My Location</button>
+                    <span style="font-size: 13px; color: #9ca3af;">or</span>
+                    <span id="locationStatus" style="font-size: 13px; color: #6b7280;"></span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="month">📅 Month & Year</label>
+                <input type="month" id="month" value="">
+                <div class="input-hint">Select the month to check</div>
+            </div>
+
+            <button class="big-button" onclick="calculateSimple()">
+                🔮 Calculate Moon Visibility
+            </button>
+        </div>
+
+        <div id="advancedMode" class="advanced-mode">
+            <div class="input-group">
+                <label for="beta">Moon's Declination β (degrees)</label>
+                <input type="number" id="beta" step="0.01" placeholder="e.g., -4.48">
+            </div>
+
+            <div class="input-group">
+                <label for="maxBeta">Maximum β (degrees)</label>
+                <input type="number" id="maxBeta" step="0.01" placeholder="e.g., 5.148">
+            </div>
+
+            <div class="input-group">
+                <label for="phi">φ (degrees)</label>
+                <input type="number" id="phi" step="0.01" placeholder="e.g., 1.22">
+            </div>
+
+            <div class="input-group">
+                <label for="sinPhi">sin φ</label>
+                <input type="number" id="sinPhi" step="0.0001" placeholder="e.g., 0.0213">
+            </div>
+
+            <button class="big-button" onclick="calculateAdvanced()">Calculate</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>Calculating lunar position...</div>
+        </div>
+
+        <div id="result" class="result">
+            <div class="result-main">
+                <div class="result-icon" id="resultIcon">🌙</div>
+                <div class="result-title" id="resultTitle">Moon is Visible!</div>
+                <div class="result-date" id="resultDate">Thursday, February 19, 2026</div>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Angular Separation</span>
+                <span class="result-value" id="angularSep">-</span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">Moon Age</span>
+                <span class="result-value" id="moonAge">-</span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">Location</span>
+                <span class="result-value" id="locationName">-</span>
+            </div>
+
+            <div class="result-item">
+                <span class="result-label">Sunset Time</span>
+                <span class="result-value" id="sunsetTime">-</span>
+            </div>
+        </div>
+
+        <div class="mode-toggle">
+            <button class="mode-toggle-btn" onclick="toggleMode()">
+                <span id="modeToggleText">🔧 Advanced Mode (for experts)</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="cities.js"></script>
+    <script src="calculator.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
