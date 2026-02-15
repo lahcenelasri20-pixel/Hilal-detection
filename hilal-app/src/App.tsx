@@ -51,6 +51,7 @@ function App() {
   const [advancedMode, setAdvancedMode] = useState(false);
   const [location, setLocation] = useState<Location | null>(null);
   const [locationStatus, setLocationStatus] = useState<string>("");
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   // Advanced mode inputs
   const [beta, setBeta] = useState("");
@@ -72,25 +73,38 @@ function App() {
   const resultItemsRef = useRef<HTMLDivElement>(null);
   const calculateBtnRef = useRef<HTMLButtonElement>(null);
   const modeToggleRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
 
-  // Header entrance animation
+  // Check for reduced motion preference
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      setReducedMotion(e.matches);
+    };
+    
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  // Header entrance animation (respects reduced motion)
+  useEffect(() => {
+    if (reducedMotion) return;
+    
     const ctx = gsap.context(() => {
-      // Header image fade in
       gsap.fromTo(
         ".header-bg",
         { opacity: 0, scale: 1.1 },
         { opacity: 1, scale: 1, duration: 1.2, ease: "power2.out" }
       );
 
-      // Icon animation with pulse
       gsap.fromTo(
         iconRef.current,
         { opacity: 0, y: 30, scale: 0.8 },
         { opacity: 1, y: 0, scale: 1, duration: 0.8, delay: 0.3, ease: "back.out(1.7)" }
       );
 
-      // Icon continuous floating animation
       gsap.to(iconRef.current, {
         y: -8,
         duration: 2,
@@ -100,7 +114,6 @@ function App() {
         delay: 1.1,
       });
 
-      // Icon glow pulse
       gsap.to(".icon-glow", {
         scale: 1.2,
         opacity: 0.4,
@@ -110,14 +123,12 @@ function App() {
         ease: "power1.inOut",
       });
 
-      // Heading slide up
       gsap.fromTo(
         headingRef.current,
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.7, delay: 0.5, ease: "power3.out" }
       );
 
-      // Paragraph fade in
       gsap.fromTo(
         paragraphRef.current,
         { opacity: 0, y: 15 },
@@ -126,110 +137,105 @@ function App() {
     }, headerRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [reducedMotion]);
 
   // Form container entrance animation
   useEffect(() => {
-    if (containerRef.current) {
-      gsap.fromTo(
-        containerRef.current,
-        { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: 0.8, delay: 0.9, ease: "power2.out" }
-      );
-    }
-  }, []);
+    if (reducedMotion || !containerRef.current) return;
+    
+    gsap.fromTo(
+      containerRef.current,
+      { opacity: 0, y: 40 },
+      { opacity: 1, y: 0, duration: 0.8, delay: 0.9, ease: "power2.out" }
+    );
+  }, [reducedMotion]);
 
   // Form card stagger animation
   useEffect(() => {
-    if (formCardRef.current && !result) {
-      const elements = formCardRef.current.querySelectorAll(".animate-form-item");
-      gsap.fromTo(
-        elements,
-        { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, delay: 1.1, ease: "power2.out" }
-      );
-    }
-  }, [result, advancedMode]);
+    if (reducedMotion || !formCardRef.current || result) return;
+    
+    const elements = formCardRef.current.querySelectorAll(".animate-form-item");
+    gsap.fromTo(
+      elements,
+      { opacity: 0, x: -20 },
+      { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, delay: 1.1, ease: "power2.out" }
+    );
+  }, [result, advancedMode, reducedMotion]);
 
   // Suggestions dropdown animation
   useEffect(() => {
-    if (suggestionsDropdownRef.current) {
-      if (showSuggestions && filteredCities.length > 0) {
-        gsap.fromTo(
-          suggestionsDropdownRef.current,
-          { opacity: 0, y: -10, scale: 0.95 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
-        );
-        
-        // Stagger animate suggestion items
-        const items = suggestionsDropdownRef.current.querySelectorAll(".suggestion-item");
-        gsap.fromTo(
-          items,
-          { opacity: 0, x: -10 },
-          { opacity: 1, x: 0, duration: 0.3, stagger: 0.05, ease: "power2.out" }
-        );
-      } else {
-        gsap.to(suggestionsDropdownRef.current, {
-          opacity: 0,
-          y: -10,
-          scale: 0.95,
-          duration: 0.2,
-          ease: "power2.in",
-        });
-      }
+    if (reducedMotion || !suggestionsDropdownRef.current) return;
+    
+    if (showSuggestions && filteredCities.length > 0) {
+      gsap.fromTo(
+        suggestionsDropdownRef.current,
+        { opacity: 0, y: -10, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
+      );
+      
+      const items = suggestionsDropdownRef.current.querySelectorAll(".suggestion-item");
+      gsap.fromTo(
+        items,
+        { opacity: 0, x: -10 },
+        { opacity: 1, x: 0, duration: 0.3, stagger: 0.05, ease: "power2.out" }
+      );
+    } else {
+      gsap.to(suggestionsDropdownRef.current, {
+        opacity: 0,
+        y: -10,
+        scale: 0.95,
+        duration: 0.2,
+        ease: "power2.in",
+      });
     }
-  }, [showSuggestions, cityQuery]);
+  }, [showSuggestions, cityQuery, reducedMotion]);
 
   // Result animation
   useEffect(() => {
-    if (result && resultRef.current) {
-      const ctx = gsap.context(() => {
-        // Main result card entrance
+    if (reducedMotion || !result || !resultRef.current) return;
+    
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        resultRef.current,
+        { opacity: 0, scale: 0.9, y: 30 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "power3.out" }
+      );
+
+      gsap.fromTo(
+        ".result-icon",
+        { scale: 0, rotation: -180 },
+        { scale: 1, rotation: 0, duration: 0.5, delay: 0.3, ease: "back.out(2)" }
+      );
+
+      gsap.fromTo(
+        ".result-title",
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.4, delay: 0.4, ease: "power2.out" }
+      );
+
+      if (resultItemsRef.current) {
+        const items = resultItemsRef.current.querySelectorAll(".result-item");
         gsap.fromTo(
-          resultRef.current,
-          { opacity: 0, scale: 0.9, y: 30 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.6, ease: "power3.out" }
+          items,
+          { opacity: 0, x: -20 },
+          { opacity: 1, x: 0, duration: 0.4, stagger: 0.08, delay: 0.5, ease: "power2.out" }
         );
+      }
+    }, resultRef);
 
-        // Result icon bounce
-        gsap.fromTo(
-          ".result-icon",
-          { scale: 0, rotation: -180 },
-          { scale: 1, rotation: 0, duration: 0.5, delay: 0.3, ease: "back.out(2)" }
-        );
-
-        // Result title slide
-        gsap.fromTo(
-          ".result-title",
-          { opacity: 0, y: 10 },
-          { opacity: 1, y: 0, duration: 0.4, delay: 0.4, ease: "power2.out" }
-        );
-
-        // Result items stagger
-        if (resultItemsRef.current) {
-          const items = resultItemsRef.current.querySelectorAll(".result-item");
-          gsap.fromTo(
-            items,
-            { opacity: 0, x: -20 },
-            { opacity: 1, x: 0, duration: 0.4, stagger: 0.08, delay: 0.5, ease: "power2.out" }
-          );
-        }
-      }, resultRef);
-
-      return () => ctx.revert();
-    }
-  }, [result]);
+    return () => ctx.revert();
+  }, [result, reducedMotion]);
 
   // Mode toggle animation
   useEffect(() => {
-    if (modeToggleRef.current) {
-      gsap.fromTo(
-        modeToggleRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.4, delay: 0.2, ease: "power2.out" }
-      );
-    }
-  }, [advancedMode]);
+    if (reducedMotion || !modeToggleRef.current) return;
+    
+    gsap.fromTo(
+      modeToggleRef.current,
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.4, delay: 0.2, ease: "power2.out" }
+    );
+  }, [advancedMode, reducedMotion]);
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -247,58 +253,64 @@ function App() {
 
   // Button hover animations
   const handleButtonHover = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    if (reducedMotion) return;
     gsap.to(e.currentTarget, {
       scale: 1.02,
       duration: 0.2,
       ease: "power2.out",
     });
-  }, []);
+  }, [reducedMotion]);
 
   const handleButtonLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    if (reducedMotion) return;
     gsap.to(e.currentTarget, {
       scale: 1,
       duration: 0.2,
       ease: "power2.out",
     });
-  }, []);
+  }, [reducedMotion]);
 
   // Input focus animation
   const handleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    if (reducedMotion) return;
     gsap.to(e.currentTarget, {
       scale: 1.01,
       duration: 0.2,
       ease: "power2.out",
     });
-  }, []);
+  }, [reducedMotion]);
 
   const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
+    if (reducedMotion) return;
     gsap.to(e.currentTarget, {
       scale: 1,
       duration: 0.2,
       ease: "power2.out",
     });
-  }, []);
+  }, [reducedMotion]);
 
   // Suggestion item hover
   const handleSuggestionHover = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    if (reducedMotion) return;
     gsap.to(e.currentTarget, {
       x: 4,
       duration: 0.2,
       ease: "power2.out",
     });
-  }, []);
+  }, [reducedMotion]);
 
   const handleSuggestionLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    if (reducedMotion) return;
     gsap.to(e.currentTarget, {
       x: 0,
       duration: 0.2,
       ease: "power2.out",
     });
-  }, []);
+  }, [reducedMotion]);
 
   // Calculate button click animation
   const handleCalculateClick = useCallback(() => {
-    if (calculateBtnRef.current) {
+    if (!reducedMotion && calculateBtnRef.current) {
       gsap.to(calculateBtnRef.current, {
         scale: 0.95,
         duration: 0.1,
@@ -308,7 +320,7 @@ function App() {
       });
     }
     calculateSimple();
-  }, []);
+  }, [reducedMotion]);
 
   const filteredCities = cityQuery.length >= 2
     ? majorCities
@@ -339,7 +351,7 @@ function App() {
       return;
     }
 
-    setLocationStatus("Getting location...");
+    setLocationStatus("Getting location…");
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const loc: Location = {
@@ -434,24 +446,39 @@ function App() {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
+    return new Intl.DateTimeFormat("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    });
+    }).format(date);
+  };
+
+  // Handle keyboard navigation for suggestions
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background touch-manipulation">
+      {/* Skip Link for Accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
+      >
+        Skip to main content
+      </a>
+
       {/* Hero Header */}
-      <div ref={headerRef} className="relative w-full h-[320px] sm:h-[380px] overflow-hidden">
+      <header ref={headerRef} className="relative w-full h-[320px] sm:h-[380px] overflow-hidden">
         {/* Background Image */}
         <div 
           className="header-bg absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/header-ramadan.jpg')" }}
         />
-        {/* Gradient Overlay - from bottom to top */}
+        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         
         {/* Content */}
@@ -460,24 +487,30 @@ function App() {
           <div ref={iconRef} className="relative mb-4">
             <div className="icon-glow absolute inset-0 bg-primary/20 blur-xl rounded-full scale-150" />
             <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-background/90 backdrop-blur-sm shadow-lg border border-primary/20">
-              <Moon className="w-10 h-10 text-primary" strokeWidth={1.5} />
-              <Star className="absolute -top-1 -right-1 w-5 h-5 text-primary/60 fill-primary/60" />
+              <Moon className="w-10 h-10 text-primary" strokeWidth={1.5} aria-hidden="true" />
+              <Star className="absolute -top-1 -right-1 w-5 h-5 text-primary/60 fill-primary/60" aria-hidden="true" />
             </div>
           </div>
           
-          {/* Heading */}
-          <h1 ref={headingRef} className="text-3xl sm:text-4xl font-bold text-foreground text-center tracking-tight mb-2">
+          {/* Heading with text-wrap balance */}
+          <h1 
+            ref={headingRef} 
+            className="text-3xl sm:text-4xl font-bold text-foreground text-center tracking-tight mb-2 text-balance"
+          >
             When is Ramadan?
           </h1>
           
           {/* Paragraph */}
-          <p ref={paragraphRef} className="text-sm sm:text-base text-muted-foreground text-center max-w-md">
+          <p 
+            ref={paragraphRef} 
+            className="text-sm sm:text-base text-muted-foreground text-center max-w-md text-balance"
+          >
             Discover the precise moment when the new crescent moon heralds the beginning of Ramadan in your city
           </p>
         </div>
-      </div>
+      </header>
 
-      <div className="flex items-center justify-center p-4 sm:p-6 -mt-4">
+      <main id="main-content" className="flex items-center justify-center p-4 sm:p-6 -mt-4">
         <div
           ref={containerRef}
           className="w-full max-w-md space-y-6"
@@ -486,15 +519,15 @@ function App() {
         {/* Info Badge */}
         <div className="animate-form-item">
           <Badge variant="secondary" className="w-full justify-center py-2 text-xs font-normal">
-            <Info className="w-3 h-3 mr-2 flex-shrink-0" />
-            Simply enter your city and the month you want to check. We'll calculate everything automatically!
+            <Info className="w-3 h-3 mr-2 flex-shrink-0" aria-hidden="true" />
+            <span className="text-balance">Simply enter your city and the month you want to check. We&apos;ll calculate everything automatically!</span>
           </Badge>
         </div>
 
         {/* Main Card */}
         <Card ref={formCardRef}>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg animate-form-item">Moon Visibility Calculator</CardTitle>
+            <CardTitle className="text-lg animate-form-item text-balance">Moon Visibility Calculator</CardTitle>
             <CardDescription className="animate-form-item">
               {advancedMode
                 ? "Enter astronomical parameters manually"
@@ -508,14 +541,18 @@ function App() {
                 {/* City Input */}
                 <div className="space-y-2 animate-form-item" ref={suggestionsRef}>
                   <Label htmlFor="city" className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <MapPin className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     Your City
                   </Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     <Input
                       id="city"
-                      placeholder="e.g., Marrakesh, Rabat, Casablanca..."
+                      name="city"
+                      type="text"
+                      autoComplete="address-level2"
+                      spellCheck={false}
+                      placeholder="e.g., Marrakesh, Rabat, Casablanca…"
                       value={cityQuery}
                       onChange={(e) => {
                         setCityQuery(e.target.value);
@@ -531,20 +568,29 @@ function App() {
                         handleInputFocus(e);
                       }}
                       onBlur={handleInputBlur}
+                      onKeyDown={handleKeyDown}
                       className="pl-10"
+                      aria-describedby="city-hint"
+                      aria-autocomplete="list"
+                      aria-expanded={showSuggestions}
+                      aria-controls={showSuggestions ? "city-suggestions" : undefined}
                     />
                     {showSuggestions && filteredCities.length > 0 && (
                       <div 
                         ref={suggestionsDropdownRef}
-                        className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden"
+                        id="city-suggestions"
+                        role="listbox"
+                        className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg overflow-hidden overscroll-contain"
                       >
                         {filteredCities.map((city) => (
                           <button
                             key={`${city.name}-${city.country}`}
+                            role="option"
+                            aria-selected={cityQuery === `${city.name}, ${city.country}`}
                             onClick={() => handleCitySelect(city)}
                             onMouseEnter={handleSuggestionHover}
                             onMouseLeave={handleSuggestionLeave}
-                            className="suggestion-item w-full px-4 py-3 text-left hover:bg-muted transition-colors border-b last:border-b-0"
+                            className="suggestion-item w-full px-4 py-3 text-left hover:bg-muted transition-colors border-b last:border-b-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             <div className="font-medium text-sm">{city.name}</div>
                             <div className="text-xs text-muted-foreground">{city.country}</div>
@@ -553,7 +599,10 @@ function App() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 animate-form-item">
+                  <div id="city-hint" className="sr-only">
+                    Start typing to see city suggestions
+                  </div>
+                  <div className="flex items-center gap-2 animate-form-item" ref={statusRef} aria-live="polite" aria-atomic="true">
                     <Button
                       type="button"
                       variant="outline"
@@ -561,9 +610,9 @@ function App() {
                       onClick={detectLocation}
                       onMouseEnter={handleButtonHover}
                       onMouseLeave={handleButtonLeave}
-                      className="text-xs"
+                      className="text-xs touch-manipulation"
                     >
-                      <Navigation className="w-3 h-3 mr-1" />
+                      <Navigation className="w-3 h-3 mr-1" aria-hidden="true" />
                       Use My Location
                     </Button>
                     {locationStatus && (
@@ -577,16 +626,19 @@ function App() {
                 {/* Month Input */}
                 <div className="space-y-2 animate-form-item">
                   <Label htmlFor="month" className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    Month & Year
+                    <Calendar className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                    Month &amp; Year
                   </Label>
                   <Input
                     id="month"
+                    name="month"
                     type="month"
+                    autoComplete="off"
                     value={month}
                     onChange={(e) => setMonth(e.target.value)}
                     onFocus={handleInputFocus}
                     onBlur={handleInputBlur}
+                    className="touch-manipulation"
                   />
                 </div>
 
@@ -597,13 +649,14 @@ function App() {
                   disabled={loading}
                   onMouseEnter={handleButtonHover}
                   onMouseLeave={handleButtonLeave}
-                  className="w-full animate-form-item"
+                  className="w-full animate-form-item touch-manipulation"
                   size="lg"
+                  type="submit"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Calculating...
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                      Calculating…
                     </>
                   ) : (
                     <>Calculate Moon Visibility</>
@@ -615,16 +668,21 @@ function App() {
                 {/* Advanced Mode Inputs */}
                 <div ref={inputsRef} className="space-y-3">
                   <div className="space-y-2 animate-form-item">
-                    <Label htmlFor="beta">Moon's Declination β (degrees)</Label>
+                    <Label htmlFor="beta">Moon&apos;s Declination β (degrees)</Label>
                     <Input
                       id="beta"
+                      name="beta"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
+                      spellCheck={false}
+                      autoComplete="off"
                       placeholder="e.g., -4.48"
                       value={beta}
                       onChange={(e) => setBeta(e.target.value)}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
+                      className="touch-manipulation"
                     />
                   </div>
 
@@ -632,13 +690,18 @@ function App() {
                     <Label htmlFor="maxBeta">Maximum β (degrees)</Label>
                     <Input
                       id="maxBeta"
+                      name="maxBeta"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
+                      spellCheck={false}
+                      autoComplete="off"
                       placeholder="e.g., 5.148"
                       value={maxBeta}
                       onChange={(e) => setMaxBeta(e.target.value)}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
+                      className="touch-manipulation"
                     />
                   </div>
 
@@ -646,13 +709,18 @@ function App() {
                     <Label htmlFor="phi">φ (degrees)</Label>
                     <Input
                       id="phi"
+                      name="phi"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
+                      spellCheck={false}
+                      autoComplete="off"
                       placeholder="e.g., 1.22"
                       value={phi}
                       onChange={(e) => setPhi(e.target.value)}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
+                      className="touch-manipulation"
                     />
                   </div>
 
@@ -660,21 +728,27 @@ function App() {
                     <Label htmlFor="sinPhi">sin φ</Label>
                     <Input
                       id="sinPhi"
+                      name="sinPhi"
                       type="number"
                       step="0.0001"
+                      inputMode="decimal"
+                      spellCheck={false}
+                      autoComplete="off"
                       placeholder="e.g., 0.0213"
                       value={sinPhi}
                       onChange={(e) => setSinPhi(e.target.value)}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
+                      className="touch-manipulation"
                     />
                   </div>
 
                   <Button 
                     onClick={calculateAdvanced} 
-                    className="w-full animate-form-item"
+                    className="w-full animate-form-item touch-manipulation"
                     onMouseEnter={handleButtonHover}
                     onMouseLeave={handleButtonLeave}
+                    type="submit"
                   >
                     Calculate
                   </Button>
@@ -686,7 +760,7 @@ function App() {
 
         {/* Results */}
         {result && (
-          <div ref={resultRef}>
+          <div ref={resultRef} role="region" aria-label="Calculation results">
             <Card
               className={`border-2 ${
                 result.visibility.isVisible
@@ -696,14 +770,14 @@ function App() {
             >
               <CardContent className="pt-6">
                 <div className="text-center space-y-2 mb-6">
-                  <div className="result-icon inline-flex items-center justify-center w-12 h-12 rounded-full bg-background shadow-sm mb-2">
+                  <div className="result-icon inline-flex items-center justify-center w-12 h-12 rounded-full bg-background shadow-sm mb-2" aria-hidden="true">
                     {result.visibility.isVisible ? (
                       <CheckCircle2 className="w-6 h-6 text-green-600" />
                     ) : (
                       <XCircle className="w-6 h-6 text-red-600" />
                     )}
                   </div>
-                  <h3 className="result-title text-lg font-semibold">
+                  <h3 className="result-title text-lg font-semibold text-balance">
                     {result.visibility.isVisible
                       ? "Moon Will Be Visible!"
                       : "Moon Not Visible"}
@@ -722,21 +796,21 @@ function App() {
                 <div ref={resultItemsRef} className="space-y-3">
                   <div className="result-item flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Angular Separation</span>
-                    <span className="font-medium">
+                    <span className="font-medium tabular-nums">
                       {result.visibility.angularSep.toFixed(2)}°
                     </span>
                   </div>
 
                   <div className="result-item flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Moon Age</span>
-                    <span className="font-medium">
+                    <span className="font-medium tabular-nums">
                       {result.moonAge.toFixed(1)} days
                     </span>
                   </div>
 
                   <div className="result-item flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Location</span>
-                    <span className="font-medium text-right">
+                    <span className="font-medium text-right min-w-0 truncate">
                       {result.location.name}
                       {result.location.country && `, ${result.location.country}`}
                     </span>
@@ -744,10 +818,10 @@ function App() {
 
                   <div className="result-item flex justify-between items-center text-sm">
                     <span className="text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
+                      <Clock className="w-3 h-3" aria-hidden="true" />
                       Sunset Time
                     </span>
-                    <span className="font-medium">{result.sunsetTime}</span>
+                    <span className="font-medium tabular-nums">{result.sunsetTime}</span>
                   </div>
                 </div>
               </CardContent>
@@ -763,23 +837,25 @@ function App() {
             onClick={() => setAdvancedMode(!advancedMode)}
             onMouseEnter={handleButtonHover}
             onMouseLeave={handleButtonLeave}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-muted-foreground hover:text-foreground touch-manipulation"
+            aria-expanded={advancedMode}
+            aria-controls="advanced-mode-panel"
           >
             {advancedMode ? (
               <>
-                <ChevronUp className="w-3 h-3 mr-1" />
+                <ChevronUp className="w-3 h-3 mr-1" aria-hidden="true" />
                 Simple Mode
               </>
             ) : (
               <>
-                <ChevronDown className="w-3 h-3 mr-1" />
+                <ChevronDown className="w-3 h-3 mr-1" aria-hidden="true" />
                 Advanced Mode (for experts)
               </>
             )}
           </Button>
         </div>
       </div>
-    </div>
+    </main>
   </div>
   );
 }
